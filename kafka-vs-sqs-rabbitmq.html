@@ -221,9 +221,11 @@
     <li><a href="#backpressure">Backpressure &amp; Flow Control</a></li>
     <li><a href="#comparison">Full Comparison Matrix</a></li>
     <li><a href="#kinesis">AWS Kinesis &amp; Other Tools</a></li>
+    <li><a href="#use-cases">Use Cases: Log-Based vs Memory-Based Brokers</a></li>
     <li><a href="#decision">Decision Framework</a></li>
     <li><a href="#production">Production War Stories &amp; Gotchas</a></li>
     <li><a href="#interview">System Design Interview Cheat Sheet</a></li>
+    <li><a href="#references">References</a></li>
     <li><a href="#appendix">Appendix: Whiteboard Diagrams</a></li>
   </ol>
 </nav>
@@ -963,10 +965,51 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     9. DECISION FRAMEWORK
+     9. USE CASES
+     ═══════════════════════════════════════════════════════ -->
+<section id="use-cases">
+  <h2>9. Use Cases: Log-Based vs Memory-Based Brokers</h2>
+
+  <div class="cards">
+    <div class="card">
+      <span class="badge badge-log">Log-based broker</span>
+      <h3 style="color:var(--kafka)">Best use cases for Kafka / Kinesis / Pulsar</h3>
+      <ul>
+        <li><strong>Event sourcing:</strong> Store immutable facts such as orders, payments, or inventory changes for later replay.</li>
+        <li><strong>Audit trails:</strong> Keep a durable, ordered history of security events, financial events, or user activity.</li>
+        <li><strong>Change Data Capture:</strong> Stream database changes with tools like Debezium and fan them out to search, cache, and analytics systems.</li>
+        <li><strong>Real-time analytics:</strong> Feed metrics, clicks, logs, and telemetry into stream processing jobs or data lakes.</li>
+        <li><strong>Multiple independent subscribers:</strong> Let fraud, notifications, BI, and ML consumers read the same events at their own pace.</li>
+        <li><strong>Backfills and reprocessing:</strong> Re-run consumers from older offsets after bug fixes, schema migrations, or new feature launches.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <span class="badge badge-queue">Memory-based broker</span>
+      <h3 style="color:var(--rabbit)">Best use cases for RabbitMQ / SQS / Redis Streams</h3>
+      <ul>
+        <li><strong>Background jobs:</strong> Queue work such as email sends, image resizing, report generation, and webhook delivery.</li>
+        <li><strong>Work distribution:</strong> Spread independent tasks across a pool of competing workers where each task should run once.</li>
+        <li><strong>Request/reply workflows:</strong> Implement RPC-style interactions with correlation IDs, reply queues, and timeouts.</li>
+        <li><strong>Content-based routing:</strong> Use RabbitMQ exchanges to route messages by topic, header, region, tenant, or priority.</li>
+        <li><strong>Retry and DLQ handling:</strong> Move failed work through retry queues, visibility timeouts, and dead letter queues.</li>
+        <li><strong>Short-lived operational buffers:</strong> Absorb brief traffic spikes between producers and consumers without needing long-term replay.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Rule of thumb:</strong> choose log-based brokers when the event history itself is valuable; choose memory-based queues when the message is mainly a command to do work once.
+  </div>
+</section>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════
+     10. DECISION FRAMEWORK
      ═══════════════════════════════════════════════════════ -->
 <section id="decision">
-  <h2>9. Decision Framework</h2>
+  <h2>10. Decision Framework</h2>
 
   <div class="diagram-box">
     <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif" style="max-width:900px;">
@@ -1046,10 +1089,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     10. PRODUCTION GOTCHAS
+     11. PRODUCTION GOTCHAS
      ═══════════════════════════════════════════════════════ -->
 <section id="production">
-  <h2>10. Production War Stories &amp; Gotchas</h2>
+  <h2>11. Production War Stories &amp; Gotchas</h2>
 
   <div class="cards">
     <div class="card">
@@ -1089,10 +1132,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     11. INTERVIEW CHEAT SHEET
+     12. INTERVIEW CHEAT SHEET
      ═══════════════════════════════════════════════════════ -->
 <section id="interview">
-  <h2>11. System Design Interview Cheat Sheet</h2>
+  <h2>12. System Design Interview Cheat Sheet</h2>
 
   <div class="callout success">
     <strong>The winning pattern:</strong> Don't just name-drop a technology. State the <em>requirement</em>, map it to the <em>property</em> of the system, then pick.
@@ -1169,10 +1212,24 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     12. APPENDIX: WHITEBOARD DIAGRAMS
+     13. REFERENCES
+     ═══════════════════════════════════════════════════════ -->
+<section id="references">
+  <h2>13. References</h2>
+
+  <ul style="color:var(--text2); padding-left:1.5rem;">
+    <li><a href="https://www.youtube.com/watch?v=_5mu7lZz5X4">Log-based and memory-based message brokers video</a></li>
+    <li><em>Designing Data-Intensive Applications</em>, Chapter 11: Stream Processing</li>
+  </ul>
+</section>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════
+     14. APPENDIX: WHITEBOARD DIAGRAMS
      ═══════════════════════════════════════════════════════ -->
 <section id="appendix">
-  <h2>12. Appendix: Whiteboard Diagrams</h2>
+  <h2>14. Appendix: Whiteboard Diagrams</h2>
   <p>Reference whiteboard sketches from the study session showing the core mental models.</p>
 
   <div class="callout">
