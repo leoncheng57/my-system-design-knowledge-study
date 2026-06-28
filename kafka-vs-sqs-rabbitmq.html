@@ -211,13 +211,13 @@
     <li><a href="#delivery">Delivery Semantics &amp; Failure Handling</a></li>
     <li><a href="#ordering">Ordering Guarantees — The Subtle Stuff</a></li>
     <li><a href="#backpressure">Backpressure &amp; Flow Control</a></li>
-    <li><a href="#comparison">Full Comparison Matrix</a></li>
     <li><a href="#kinesis">AWS Kinesis &amp; Other Tools</a></li>
     <li><a href="#use-cases">Use Cases: Log-Based vs Memory-Based Brokers</a></li>
     <li><a href="#decision">Decision Framework</a></li>
     <li><a href="#production">Production War Stories &amp; Gotchas</a></li>
     <li><a href="#interview">System Design Interview Cheat Sheet</a></li>
     <li><a href="#references">References</a></li>
+    <li><a href="#comparison">Appendix: Full Comparison Matrix</a></li>
   </ol>
 </nav>
 
@@ -403,6 +403,13 @@
       <text x="400" y="255" text-anchor="middle" fill="#656d76" font-size="10">If a follower falls too far behind, it's removed from ISR. min.insync.replicas prevents data loss.</text>
     </svg>
     <div class="caption">Fig 2. Kafka replication. The leader handles all I/O; followers pull asynchronously. ISR set determines durability guarantees.</div>
+  </div>
+
+  <div class="callout">
+    <strong>Consumer side — reading is not taking:</strong> In Kafka, consumers do not remove messages from the partition.
+    A consumer polls the partition leader for records starting at its current offset, processes the returned batch, then commits a newer offset to say
+    "I've processed up to here." The log remains unchanged until retention deletes old segments, which is why another consumer group can read the same
+    messages independently or an existing group can rewind and replay. This differs from SQS/RabbitMQ, where ACKing a message removes it from the queue.
   </div>
 
   <div class="callout warn">
@@ -690,142 +697,11 @@
   </div>
 </section>
 
-<hr class="section-divider">
-
 <!-- ═══════════════════════════════════════════════════════
-     7. FULL COMPARISON MATRIX
-     ═══════════════════════════════════════════════════════ -->
-<section id="comparison">
-  <h2>7. Full Comparison Matrix</h2>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Dimension</th>
-          <th style="color:var(--kafka)">Kafka</th>
-          <th style="color:var(--sqs)">SQS</th>
-          <th style="color:var(--rabbit)">RabbitMQ</th>
-          <th style="color:var(--kinesis)">Kinesis</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td>Model</td>
-          <td>Distributed commit log</td>
-          <td>Managed message queue</td>
-          <td>AMQP message broker</td>
-          <td>Managed data stream (log)</td>
-        </tr>
-        <tr>
-          <td>Retention</td>
-          <td>Configurable (days → forever)</td>
-          <td>Up to 14 days</td>
-          <td>Until acknowledged</td>
-          <td>24h default, up to 365 days</td>
-        </tr>
-        <tr>
-          <td>Replay</td>
-          <td>Yes — seek to any offset</td>
-          <td>No</td>
-          <td>No</td>
-          <td>Yes — iterator types (TRIM_HORIZON, AT_TIMESTAMP)</td>
-        </tr>
-        <tr>
-          <td>Ordering</td>
-          <td>Per-partition</td>
-          <td>Best-effort (Standard) / strict (FIFO)</td>
-          <td>Per-queue (with caveats)</td>
-          <td>Per-shard</td>
-        </tr>
-        <tr>
-          <td>Delivery</td>
-          <td>Pull (consumer polls)</td>
-          <td>Pull (long polling)</td>
-          <td>Push (broker pushes)</td>
-          <td>Pull (GetRecords / KCL)</td>
-        </tr>
-        <tr>
-          <td>Throughput</td>
-          <td>Millions msg/s (add partitions)</td>
-          <td>Unlimited (Standard)</td>
-          <td>10k–50k msg/s typical</td>
-          <td>1 MB/s or 1000 records/s per shard</td>
-        </tr>
-        <tr>
-          <td>Consumer groups</td>
-          <td>Multiple independent groups</td>
-          <td>1 consumer per message</td>
-          <td>1 per message (unless fanout exchange)</td>
-          <td>Multiple applications via KCL</td>
-        </tr>
-        <tr>
-          <td>Routing</td>
-          <td>Topics + partitions</td>
-          <td>Queue per destination</td>
-          <td>Exchanges + bindings (rich)</td>
-          <td>Streams + shards</td>
-        </tr>
-        <tr>
-          <td>DLQ</td>
-          <td>Manual (produce to dlq topic)</td>
-          <td>Built-in (first-class)</td>
-          <td>Built-in (x-dead-letter-exchange)</td>
-          <td>Manual or via Lambda destinations</td>
-        </tr>
-        <tr>
-          <td>Operations</td>
-          <td>Self-managed / Confluent / MSK</td>
-          <td>Fully managed — zero ops</td>
-          <td>Self-managed / CloudAMQP / AmazonMQ</td>
-          <td>Fully managed — zero ops</td>
-        </tr>
-        <tr>
-          <td>Exactly-once</td>
-          <td>Yes (idempotent producer + transactions)</td>
-          <td>Yes (FIFO + dedup ID, 5-min window)</td>
-          <td>No (at-most-once or at-least-once)</td>
-          <td>No (at-least-once)</td>
-        </tr>
-        <tr>
-          <td>Max message size</td>
-          <td>1 MB default (configurable)</td>
-          <td>256 KB (use S3 for larger)</td>
-          <td>No hard limit (128 MB practical)</td>
-          <td>1 MB</td>
-        </tr>
-        <tr>
-          <td>Latency (p50)</td>
-          <td>2–10 ms</td>
-          <td>10–50 ms</td>
-          <td>sub-ms to 5 ms</td>
-          <td>70–200 ms (GetRecords polling)</td>
-        </tr>
-        <tr>
-          <td>Cost model</td>
-          <td>Infrastructure (brokers + disk)</td>
-          <td>Pay-per-request</td>
-          <td>Infrastructure</td>
-          <td>Per-shard-hour + per-PUT + extended retention</td>
-        </tr>
-        <tr>
-          <td>Ecosystem</td>
-          <td>Kafka Streams, Connect, ksqlDB, Schema Registry</td>
-          <td>Lambda triggers, Step Functions, EventBridge</td>
-          <td>Shovel, Federation, management UI</td>
-          <td>Firehose, Analytics, Lambda triggers</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<hr class="section-divider">
-
-<!-- ═══════════════════════════════════════════════════════
-     8. KINESIS & OTHER TOOLS
+     7. KINESIS & OTHER TOOLS
      ═══════════════════════════════════════════════════════ -->
 <section id="kinesis">
-  <h2>8. AWS Kinesis &amp; Other Popular Tools</h2>
+  <h2>7. AWS Kinesis &amp; Other Popular Tools</h2>
 
   <h3 style="color:var(--kinesis)">AWS Kinesis Data Streams</h3>
   <div class="callout">
@@ -956,10 +832,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     9. USE CASES
+     8. USE CASES
      ═══════════════════════════════════════════════════════ -->
 <section id="use-cases">
-  <h2>9. Use Cases: Log-Based vs Memory-Based Brokers</h2>
+  <h2>8. Use Cases: Log-Based vs Memory-Based Brokers</h2>
 
   <div class="cards">
     <div class="card">
@@ -997,10 +873,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     10. DECISION FRAMEWORK
+     9. DECISION FRAMEWORK
      ═══════════════════════════════════════════════════════ -->
 <section id="decision">
-  <h2>10. Decision Framework</h2>
+  <h2>9. Decision Framework</h2>
 
   <div class="diagram-box">
     <svg viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif" style="max-width:900px;">
@@ -1080,10 +956,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     11. PRODUCTION GOTCHAS
+     10. PRODUCTION GOTCHAS
      ═══════════════════════════════════════════════════════ -->
 <section id="production">
-  <h2>11. Production War Stories &amp; Gotchas</h2>
+  <h2>10. Production War Stories &amp; Gotchas</h2>
 
   <div class="cards">
     <div class="card">
@@ -1123,10 +999,10 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     12. INTERVIEW CHEAT SHEET
+     11. INTERVIEW CHEAT SHEET
      ═══════════════════════════════════════════════════════ -->
 <section id="interview">
-  <h2>12. System Design Interview Cheat Sheet</h2>
+  <h2>11. System Design Interview Cheat Sheet</h2>
 
   <div class="callout success">
     <strong>The winning pattern:</strong> Don't just name-drop a technology. State the <em>requirement</em>, map it to the <em>property</em> of the system, then pick.
@@ -1203,15 +1079,144 @@
 <hr class="section-divider">
 
 <!-- ═══════════════════════════════════════════════════════
-     13. REFERENCES
+     12. REFERENCES
      ═══════════════════════════════════════════════════════ -->
 <section id="references">
-  <h2>13. References</h2>
+  <h2>12. References</h2>
 
   <ul style="color:var(--text2); padding-left:1.5rem;">
     <li><a href="https://www.youtube.com/watch?v=_5mu7lZz5X4">Log-based and memory-based message brokers video</a></li>
     <li><em>Designing Data-Intensive Applications</em>, Chapter 11: Stream Processing</li>
   </ul>
+</section>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════
+     13. APPENDIX: FULL COMPARISON MATRIX
+     ═══════════════════════════════════════════════════════ -->
+<section id="comparison">
+  <h2>13. Appendix: Full Comparison Matrix</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Dimension</th>
+          <th style="color:var(--kafka)">Kafka</th>
+          <th style="color:var(--sqs)">SQS</th>
+          <th style="color:var(--rabbit)">RabbitMQ</th>
+          <th style="color:var(--kinesis)">Kinesis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Model</td>
+          <td>Distributed commit log</td>
+          <td>Managed message queue</td>
+          <td>AMQP message broker</td>
+          <td>Managed data stream (log)</td>
+        </tr>
+        <tr>
+          <td>Retention</td>
+          <td>Configurable (days → forever)</td>
+          <td>Up to 14 days</td>
+          <td>Until acknowledged</td>
+          <td>24h default, up to 365 days</td>
+        </tr>
+        <tr>
+          <td>Replay</td>
+          <td>Yes — seek to any offset</td>
+          <td>No</td>
+          <td>No</td>
+          <td>Yes — iterator types (TRIM_HORIZON, AT_TIMESTAMP)</td>
+        </tr>
+        <tr>
+          <td>Ordering</td>
+          <td>Per-partition</td>
+          <td>Best-effort (Standard) / strict (FIFO)</td>
+          <td>Per-queue (with caveats)</td>
+          <td>Per-shard</td>
+        </tr>
+        <tr>
+          <td>Delivery</td>
+          <td>Pull (consumer polls)</td>
+          <td>Pull (long polling)</td>
+          <td>Push (broker pushes)</td>
+          <td>Pull (GetRecords / KCL)</td>
+        </tr>
+        <tr>
+          <td>Throughput</td>
+          <td>Millions msg/s (add partitions)</td>
+          <td>Unlimited (Standard)</td>
+          <td>10k–50k msg/s typical</td>
+          <td>1 MB/s or 1000 records/s per shard</td>
+        </tr>
+        <tr>
+          <td>Consumer groups</td>
+          <td>Multiple independent groups</td>
+          <td>1 consumer per message</td>
+          <td>1 per message (unless fanout exchange)</td>
+          <td>Multiple applications via KCL</td>
+        </tr>
+        <tr>
+          <td>Routing</td>
+          <td>Topics + partitions</td>
+          <td>Queue per destination</td>
+          <td>Exchanges + bindings (rich)</td>
+          <td>Streams + shards</td>
+        </tr>
+        <tr>
+          <td>DLQ</td>
+          <td>Manual (produce to dlq topic)</td>
+          <td>Built-in (first-class)</td>
+          <td>Built-in (x-dead-letter-exchange)</td>
+          <td>Manual or via Lambda destinations</td>
+        </tr>
+        <tr>
+          <td>Operations</td>
+          <td>Self-managed / Confluent / MSK</td>
+          <td>Fully managed — zero ops</td>
+          <td>Self-managed / CloudAMQP / AmazonMQ</td>
+          <td>Fully managed — zero ops</td>
+        </tr>
+        <tr>
+          <td>Exactly-once</td>
+          <td>Yes (idempotent producer + transactions)</td>
+          <td>Yes (FIFO + dedup ID, 5-min window)</td>
+          <td>No (at-most-once or at-least-once)</td>
+          <td>No (at-least-once)</td>
+        </tr>
+        <tr>
+          <td>Max message size</td>
+          <td>1 MB default (configurable)</td>
+          <td>256 KB (use S3 for larger)</td>
+          <td>No hard limit (128 MB practical)</td>
+          <td>1 MB</td>
+        </tr>
+        <tr>
+          <td>Latency (p50)</td>
+          <td>2–10 ms</td>
+          <td>10–50 ms</td>
+          <td>sub-ms to 5 ms</td>
+          <td>70–200 ms (GetRecords polling)</td>
+        </tr>
+        <tr>
+          <td>Cost model</td>
+          <td>Infrastructure (brokers + disk)</td>
+          <td>Pay-per-request</td>
+          <td>Infrastructure</td>
+          <td>Per-shard-hour + per-PUT + extended retention</td>
+        </tr>
+        <tr>
+          <td>Ecosystem</td>
+          <td>Kafka Streams, Connect, ksqlDB, Schema Registry</td>
+          <td>Lambda triggers, Step Functions, EventBridge</td>
+          <td>Shovel, Federation, management UI</td>
+          <td>Firehose, Analytics, Lambda triggers</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════
