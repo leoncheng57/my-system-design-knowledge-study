@@ -5,10 +5,10 @@ A personal collection of system design concepts, patterns, and study notes.
 ## GitHub Pages
 
 This repository is configured for GitHub Pages using the workflow in `.github/workflows/pages.yml`.
-After this branch is merged to `main`, enable Pages with **Source: GitHub Actions** in the repository settings.
+GitHub Pages is configured with **Source: GitHub Actions**, so pushes to `main` deploy the static site.
 The public site will be available at:
 
-https://leoncheng57.github.io/my-system-design-knowledge-study/
+https://leoncheng.dev/my-system-design-knowledge-study/
 
 ## Topics
 
