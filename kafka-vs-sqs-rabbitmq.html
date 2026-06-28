@@ -153,14 +153,6 @@
     .pro-h { color: var(--green); font-weight: 600; margin-bottom: 0.4rem; }
     .con-h { color: var(--kafka); font-weight: 600; margin-bottom: 0.4rem; }
 
-    /* ── Appendix images ── */
-    .appendix-img {
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      margin-bottom: 0.8rem;
-    }
-
     /* ── TOC ── */
     .toc {
       background: var(--surface);
@@ -226,7 +218,6 @@
     <li><a href="#production">Production War Stories &amp; Gotchas</a></li>
     <li><a href="#interview">System Design Interview Cheat Sheet</a></li>
     <li><a href="#references">References</a></li>
-    <li><a href="#appendix">Appendix: Whiteboard Diagrams</a></li>
   </ol>
 </nav>
 
@@ -1222,36 +1213,6 @@
     <li><em>Designing Data-Intensive Applications</em>, Chapter 11: Stream Processing</li>
   </ul>
 </section>
-
-<hr class="section-divider">
-
-<!-- ═══════════════════════════════════════════════════════
-     14. APPENDIX: WHITEBOARD DIAGRAMS
-     ═══════════════════════════════════════════════════════ -->
-<section id="appendix">
-  <h2>14. Appendix: Whiteboard Diagrams</h2>
-  <p>Reference whiteboard sketches from the study session showing the core mental models.</p>
-
-  <div class="callout">
-    <strong>Note:</strong> Add your whiteboard screenshot images to the <code>images/</code> folder as
-    <code>log-based-broker-whiteboard.png</code> and <code>queue-broker-whiteboard.png</code> to display them below.
-  </div>
-
-  <h4>A. Log-Based Message Broker (Kafka / Kinesis)</h4>
-  <p>Sequential writes to disk. Messages persist in ordered segments (M₁, M₂, M₃, M₄...). Consumer A reads from offset 3 (current head); Consumer B is behind at offset 2, processing at its own pace (60 seconds behind).
-     The "hard tip" is the head of the log. The ACK in this model is just committing the consumer's offset — <strong>the message is never deleted</strong>.</p>
-  <img class="appendix-img" src="images/log-based-broker-whiteboard.png" alt="Whiteboard: Log-based message broker showing sequential disk writes, messages M1-M4, Consumer A at head and Consumer B behind at offset 2"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="callout warn" style="display:none;"><strong>Image not found:</strong> Place <code>images/log-based-broker-whiteboard.png</code> in the repo.</div>
-
-  <h4>B. In-Memory Queue Broker (SQS / RabbitMQ)</h4>
-  <p>Messages stored as a linked list in memory. When Consumer 1 receives and ACKs a message, it's <strong>deleted from the queue</strong> (shown with the X).
-     Multiple consumers compete for messages — each message goes to exactly one consumer. Higher concurrency = more throughput, but out-of-order processing.</p>
-  <img class="appendix-img" src="images/queue-broker-whiteboard.png" alt="Whiteboard: In-memory message broker showing linked list with nodes, ACK deletion (X), Consumer 1 and Consumer 2 as competing consumers"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="callout warn" style="display:none;"><strong>Image not found:</strong> Place <code>images/queue-broker-whiteboard.png</code> in the repo.</div>
-</section>
-
 
 <!-- ═══════════════════════════════════════════════════════
      FOOTER
